@@ -15,6 +15,7 @@ RUN apt update \
     curl \
     gdb \
     git \
+    htop \
     locate \
     mc \
     psmisc \
@@ -51,7 +52,7 @@ RUN mkdir -p /opt/espressif \
  && cd /opt/espressif \
  && git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git
 
-RUN cd /opt/espressif \
+RUN cd /opt/espressif/esp-idf/components \
  && git clone -b master --recursive https://github.com/espressif/esp32-camera.git \
  && git clone -b humble --recursive https://github.com/micro-ROS/micro_ros_espidf_component.git
 
