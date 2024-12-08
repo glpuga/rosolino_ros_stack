@@ -1,0 +1,26 @@
+services:
+  rosolino-dev:
+    build:
+      context: ..
+      dockerfile: docker/images/${ROSDISTRO:-humble}/Dockerfile
+    container_name: rosolino-dev
+    environment:
+      - DISPLAY
+      - QT_X11_NO_MITSHM=1
+      - XAUTHORITY=/tmp/.docker.xauth
+    stdin_open: true
+    tty: true
+    user: ${USERID:-1000}:${GROUPID:-1000}
+    privileged: true
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/.docker.xauth:/tmp/.docker.xauth
+      - /dev:/dev
+      - ..:/home/developer/ws/src/project
+      - rosolino_persistence:/home/developer/ws/persistence
+    device_cgroup_rules:
+      - 'c 81:* rmw'
+      - 'c 189:* rmw'
+    network_mode: host
+volumes:
+  rosolino_persistence:
