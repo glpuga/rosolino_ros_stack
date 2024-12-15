@@ -51,6 +51,14 @@ RUN apt update \
     wget \
  && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /opt/espressif \
+ && cd /opt/espressif \
+ && git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git
+
+RUN cd /opt/espressif/esp-idf/components \
+ && git clone -b master --recursive https://github.com/espressif/esp32-camera.git \
+ && git clone -b humble --recursive https://github.com/micro-ROS/micro_ros_espidf_component.git
+
 RUN addgroup --gid 1000 $GROUP \
  && adduser --uid 1000 --ingroup $GROUP --home /home/$USER --shell /bin/sh --disabled-password --gecos "" $USER \
  && adduser $USER sudo \
@@ -65,24 +73,7 @@ RUN mkdir -p $USER_WS/src
 
 WORKDIR $USER_HOME
 
-RUN mkdir -p espressif \
- && cd espressif \
- && git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git
-
-RUN cd espressif/esp-idf/components \
- && git clone -b master --recursive https://github.com/espressif/esp32-camera.git \
- && git clone -b humble --recursive https://github.com/micro-ROS/micro_ros_espidf_component.git
-
-ENV IDF_PATH "${USER_HOME}/espressif/esp-idf"
-
-RUN ~/espressif/esp-idf/install.sh esp32
-
-RUN . $IDF_PATH/export.sh \
- && pip3 install \
-    catkin_pkg \
-    lark-parser \
-    colcon-common-extensions \
-    empy==3.3.4
+ENV IDF_PATH /opt/espressif/esp-idf
 
 WORKDIR $USER_WS
 
@@ -114,6 +105,7 @@ RUN echo "source /home/developer/.developer_rc" >> /home/developer/.bashrc
 RUN sudo updatedb
 
 ENV WITHIN_DEV 1
+ENV IDF_CCACHE_ENABLE 1
 
 ENV SHELL /bin/bash
 ENTRYPOINT ["fixuid", "-q", "/ros_entrypoint.sh", "/bin/bash"]

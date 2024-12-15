@@ -1,5 +1,35 @@
 mkdir -p $USER_HOME/persistence/$(id -u)/ccache
 
 if [ ! -d "$HOME/.ccache" ]; then
-    ln -s $USER_HOME/persistence/$(id -u)/ccache  $HOME/.ccache
+    ln -s $USER_HOME/persistence/$(id -u)/ccache $HOME/.ccache
+fi
+
+# we need to relocate the espressif to a read-write location because during the build process
+# new files are added within this path. We locate it in the persistent volume, so that we don't
+# install it each time we restart the container
+
+export ESPRESSIF_INSTALLATION_DIR="$USER_HOME/persistence/$(id -u)/espressif"
+
+export IDF_PATH="$HOME/espressif/esp-idf"
+
+ln -s $ESPRESSIF_INSTALLATION_DIR $HOME
+ln -s $ESPRESSIF_INSTALLATION_DIR/.espressif $HOME
+
+if [ ! -d "$ESPRESSIF_INSTALLATION_DIR" ]; then
+    echo "Installing espressif to a read-write volume..."
+    cp -r /opt/espressif $ESPRESSIF_INSTALLATION_DIR
+
+    mkdir -p $ESPRESSIF_INSTALLATION_DIR/.espressif
+
+    $IDF_PATH/install.sh esp32
+
+    bash -c ' \
+        . $IDF_PATH/export.sh \
+     && pip3 install \
+        catkin_pkg \
+        lark-parser \
+        colcon-common-extensions \
+        empy==3.3.4'
+
+    echo "Done!"
 fi
