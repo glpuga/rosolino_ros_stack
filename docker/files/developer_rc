@@ -1,11 +1,5 @@
-mkdir -p $USER_WS/persistence/$(id -u)/ccache
-mkdir -p $USER_WS/persistence/$(id -u)/install
-mkdir -p $USER_WS/persistence/$(id -u)/build
+mkdir -p $USER_HOME/persistence/$(id -u)/ccache
 
 if [ ! -d "$HOME/.ccache" ]; then
-    ln -s $USER_WS/persistence/$(id -u)/ccache  $HOME/.ccache
-    ln -s $USER_WS/persistence/$(id -u)/install $USER_WS/install
-    ln -s $USER_WS/persistence/$(id -u)/build   $USER_WS/build
+    ln -s $USER_HOME/persistence/$(id -u)/ccache  $HOME/.ccache
 fi
-
-. /opt/ros/humble/setup.bash

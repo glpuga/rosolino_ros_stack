@@ -15,14 +15,23 @@ RUN apt update \
     curl \
     gdb \
     git \
+    htop \
+    locate \
     locate \
     mc \
     psmisc \
     python3-pip \
+    python3-venv \
+    screen \
     screen \
     tmux \
     wget \
  && rm -rf /var/lib/apt/lists/*
+
+RUN sudo apt update \
+ && sudo apt install -y --no-install-recommends \
+    ros-humble-desktop \
+ && sudo rm -rf /var/lib/apt/lists/*
 
 RUN apt update \
  && apt install --no-install-recommends -y \
@@ -42,24 +51,6 @@ RUN apt update \
     wget \
  && rm -rf /var/lib/apt/lists/*
 
-RUN sudo apt update \
- && sudo apt install -y --no-install-recommends \
-    ros-humble-desktop \
- && sudo rm -rf /var/lib/apt/lists/*
-
-RUN mkdir -p /opt/espressif \
- && cd /opt/espressif \
- && git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git
-
-RUN cd /opt/espressif \
- && git clone -b master --recursive https://github.com/espressif/esp32-camera.git \
- && git clone -b humble --recursive https://github.com/micro-ROS/micro_ros_espidf_component.git
-
-RUN apt update \
- && apt install --no-install-recommends -y \
-    python3-venv \
- && rm -rf /var/lib/apt/lists/*
-
 RUN addgroup --gid 1000 $GROUP \
  && adduser --uid 1000 --ingroup $GROUP --home /home/$USER --shell /bin/sh --disabled-password --gecos "" $USER \
  && adduser $USER sudo \
@@ -69,12 +60,31 @@ RUN addgroup --gid 1000 $GROUP \
 USER $USER:$GROUP
 
 ENV USER_HOME /home/$USER
-ENV USER_WS $USER_HOME/ws
+ENV USER_WS $USER_HOME/workspace
 RUN mkdir -p $USER_WS/src
 
-WORKDIR $USER_WS
+WORKDIR $USER_HOME
 
-RUN /opt/espressif/esp-idf/install.sh esp32
+RUN mkdir -p espressif \
+ && cd espressif \
+ && git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git
+
+RUN cd espressif/esp-idf/components \
+ && git clone -b master --recursive https://github.com/espressif/esp32-camera.git \
+ && git clone -b humble --recursive https://github.com/micro-ROS/micro_ros_espidf_component.git
+
+ENV IDF_PATH "${USER_HOME}/espressif/esp-idf"
+
+RUN ~/espressif/esp-idf/install.sh esp32
+
+RUN . $IDF_PATH/export.sh \
+ && pip3 install \
+    catkin_pkg \
+    lark-parser \
+    colcon-common-extensions \
+    empy==3.3.4
+
+WORKDIR $USER_WS
 
 RUN colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml \
  && colcon mixin update default
@@ -97,9 +107,11 @@ ENV ROS_LOCALHOST_ONLY 1
 #
 # Final setup of the workspace
 
-RUN mkdir -p $USER_WS/persistence && chmod 777 $USER_WS/persistence
+RUN mkdir -p $USER_HOME/persistence && chmod 777 $USER_HOME/persistence
 COPY docker/files/developer_rc /home/developer/.developer_rc
 RUN echo "source /home/developer/.developer_rc" >> /home/developer/.bashrc
+
+RUN sudo updatedb
 
 ENV WITHIN_DEV 1
 
