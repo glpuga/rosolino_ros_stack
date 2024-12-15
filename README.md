@@ -15,3 +15,7 @@ TBD
 idf.py build
 idf.py flash
 idf.py monitor
+
+
+
+docker run -it --rm --net=host microros/micro-ros-agent:humble udp4 --port 8888

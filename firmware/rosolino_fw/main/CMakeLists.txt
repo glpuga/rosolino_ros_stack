@@ -13,6 +13,6 @@
 # limitations under the License.
 
 idf_component_register(
-    SRCS "rosolino_fw_main.c"
-    INCLUDE_DIRS ""
+    SRCS "src/main.c"
+    INCLUDE_DIRS "include"
 )

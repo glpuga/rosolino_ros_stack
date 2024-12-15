@@ -65,6 +65,8 @@ void micro_ros_task(void *arg) {
   // RCCHECK(rmw_uros_discover_agent(rmw_options));
 #endif
 
+  // RCCHECK(rcl_init_options_set_domain_id(&init_options, 0));
+
   // create init_options
   RCCHECK(rclc_support_init_with_options(&support, 0, NULL, &init_options,
                                          &allocator));

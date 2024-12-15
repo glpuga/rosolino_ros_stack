@@ -1,0 +1,57 @@
+menu "ROSolino app settings"
+
+    config ROSOLINO_TASK_STACK
+        int "Stack the micro-ROS app (Bytes)"
+        default 16000
+        help
+        Stack size in Bytes of the micro-ROS app
+
+    config ROSOLINO_TASK_PRIO
+        int "Priority of the micro-ROS app"
+        default 5
+        help
+        Priority of micro-ros task higher value means higher priority
+
+    config ROSOLINO_DOMAIN_ID
+        int "Default Domain ID"
+        default 0
+        help
+        Default Domain ID for the micro-ROS app
+
+
+    config ROSOLINO_ODOMETRY_INTERVAL_MS
+        int "Odometry interval (ms)"
+        default 50
+        help
+        Interval in milliseconds for publishing odometry messages
+
+    config ROSOLINO_ODOMETRY_FRAME_ID
+        string "Odometry frame ID"
+        default "odom"
+        help
+        Odometry frame id for odometry messages
+
+    config ROSOLINO_ODOMETRY_BASE_LINK_FRAME_ID
+        string "Odometry base-link frame id"
+        default "base_link"
+        help
+        Base-link frame id for odometry messages
+
+    config ROSOLINO_ODOMETRY_TOPIC_NAME
+        string "Odometry topic name"
+        default "/odom"
+        help
+        Topic name for odometry messages
+
+    config ROSOLINO_CMD_VEL_TOPIC_NAME
+        string "Cmd_vel topic name"
+        default "/cmd_vel"
+        help
+        Topic name for cmd_vel messages
+
+    config ROSOLINO_NODE_NAME
+        string "Node name"
+        default "rosolino_hardware"
+        help
+        Node name for the micro-ROS app
+endmenu
