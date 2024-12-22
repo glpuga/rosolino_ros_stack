@@ -6,7 +6,7 @@ menu "ROSolino app settings"
         help
         Stack size in Bytes of the micro-ROS app
 
-    config ROSOLINO_TASK_PRIO
+    config ROSOLINO_TASK_PRIORITY
         int "Priority of the micro-ROS app"
         default 5
         help
@@ -18,6 +18,17 @@ menu "ROSolino app settings"
         help
         Default Domain ID for the micro-ROS app
 
+    config ROSOLINO_NODE_NAMESPACE
+        string "Node namespace"
+        default "rosolino"
+        help
+        Node namespace for the micro-ROS app
+
+    config ROSOLINO_NODE_NAME
+        string "Node name"
+        default "rosolino_hardware"
+        help
+        Node name for the micro-ROS app
 
     config ROSOLINO_ODOMETRY_INTERVAL_MS
         int "Odometry interval (ms)"
@@ -39,19 +50,38 @@ menu "ROSolino app settings"
 
     config ROSOLINO_ODOMETRY_TOPIC_NAME
         string "Odometry topic name"
-        default "/odom"
+        default "odom"
         help
         Topic name for odometry messages
 
     config ROSOLINO_CMD_VEL_TOPIC_NAME
         string "Cmd_vel topic name"
-        default "/cmd_vel"
+        default "cmd_vel"
         help
         Topic name for cmd_vel messages
 
-    config ROSOLINO_NODE_NAME
-        string "Node name"
-        default "rosolino_hardware"
+    config ROSOLINO_IMAGE_FRAME_ID
+        string "Image frame ID"
+        default "camera_link"
         help
-        Node name for the micro-ROS app
+        Image frame id for image messages
+
+    config ROSOLINO_IMAGE_WIDTH
+        int "Image width"
+        default 640
+        help
+        Width of the camera stream image
+
+    config ROSOLINO_IMAGE_HEIGHT
+        int "Image height"
+        default 480
+        help
+        Height of the camera stream image
+
+    config ROSOLINO_IMAGE_TOPIC_NAME
+        string "Image topic name"
+        default "stream/compressed"
+        help
+        Topic name for image messages
+
 endmenu

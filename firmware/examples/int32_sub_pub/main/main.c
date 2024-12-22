@@ -41,7 +41,7 @@ rcl_subscription_t subscriber;
 std_msgs__msg__Int32 send_msg;
 std_msgs__msg__Int32 recv_msg;
 
-void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
+void odometry_publisher_callback(rcl_timer_t *timer, int64_t last_call_time) {
   (void)last_call_time;
   if (timer != NULL) {
     RCSOFTCHECK(rcl_publish(&publisher, &send_msg, NULL));
@@ -95,7 +95,7 @@ void micro_ros_task(void *arg) {
   rcl_timer_t timer = rcl_get_zero_initialized_timer();
   const unsigned int timer_timeout = 1000;
   RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(timer_timeout),
-                                  timer_callback));
+                                  odometry_publisher_callback));
 
   // Create executor.
   rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();

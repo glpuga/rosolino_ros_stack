@@ -9,7 +9,11 @@ TBD
 - https://github.com/espressif/esp32-camera
 - https://docs.espressif.com/projects/esp-idf/en/v5.2/esp32/get-started/index.html
 
+- https://github.com/espressif/esp32-camera/blob/master/README.md
 
+- https://randomnerdtutorials.com/esp32-cam-ai-thinker-pinout/
+
+- https://github.com/micro-ROS/rmw_microxrcedds
 
 . $IDF_PATH/export.sh
 idf.py build
