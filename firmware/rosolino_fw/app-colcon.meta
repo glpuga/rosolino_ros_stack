@@ -10,7 +10,13 @@
                 "-DRMW_UXRCE_MAX_CLIENTS=0",
                 "-DRMW_UXRCE_MAX_HISTORY=1",
                 "-DRMW_UXRCE_ALLOW_DYNAMIC_ALLOCATIONS=ON",
+                "-DRMW_UXRCE_STREAM_HISTORY=16",
             ]
-        }
+        },
+        "microxrcedds_client":{
+            "cmake-args":[
+                "-DUCLIENT_UDP_TRANSPORT_MTU=1024"
+            ]
+        },
     }
 }

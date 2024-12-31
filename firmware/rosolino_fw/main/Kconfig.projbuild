@@ -2,7 +2,7 @@ menu "ROSolino app settings"
 
     config ROSOLINO_TASK_STACK
         int "Stack the micro-ROS app (Bytes)"
-        default 16000
+        default 8000
         help
         Stack size in Bytes of the micro-ROS app
 
@@ -32,7 +32,7 @@ menu "ROSolino app settings"
 
     config ROSOLINO_ODOMETRY_INTERVAL_MS
         int "Odometry interval (ms)"
-        default 50
+        default 100
         help
         Interval in milliseconds for publishing odometry messages
 
@@ -83,5 +83,11 @@ menu "ROSolino app settings"
         default "stream/compressed"
         help
         Topic name for image messages
+
+    config ROSOLINO_SPIN_INTERVAL_MS
+        int "Spin interval (ms)"
+        default 5
+        help
+        Interval in milliseconds for spinning the micro-ROS app
 
 endmenu

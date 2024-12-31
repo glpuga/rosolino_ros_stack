@@ -15,10 +15,10 @@ TBD
 
 - https://github.com/micro-ROS/rmw_microxrcedds
 
-. $IDF_PATH/export.sh
-idf.py build
-idf.py flash
-idf.py monitor
+. $IDF_PATH/export.sh \
+ && idf.py build \
+ && idf.py flash \
+ && idf.py monitor
 
 
 

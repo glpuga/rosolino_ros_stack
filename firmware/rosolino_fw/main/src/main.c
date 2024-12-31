@@ -33,7 +33,17 @@
 // application headers
 #include "macros.h"
 
-#define IMAGE_BUFFER_SIZE 64000
+// Before changing consider 40K is about enough for a jpeg encoded 640x480 image
+#define IMAGE_BUFFER_SIZE 40000
+
+rcl_allocator_t allocator;
+rclc_support_t support;
+rcl_init_options_t init_options;
+
+rcl_node_t node;
+
+rcl_timer_t odometry_timer;
+rcl_timer_t image_timer;
 
 rcl_subscription_t cmd_vel_subscriber;
 geometry_msgs__msg__Twist cmd_vel_msg;
@@ -128,6 +138,7 @@ void initialize_camera() {
 }
 
 void publish_updated_image(sensor_msgs__msg__CompressedImage *msg_ptr) {
+  sensor_msgs__msg__CompressedImage__init(msg_ptr);
   fill_current_timestamp(msg_ptr->header.stamp);
   fill_static_string_field(msg_ptr->header.frame_id,
                            CONFIG_ROSOLINO_IMAGE_FRAME_ID);
@@ -153,6 +164,7 @@ void publish_updated_image(sensor_msgs__msg__CompressedImage *msg_ptr) {
 }
 
 void update_odometry_message(nav_msgs__msg__Odometry *msg) {
+  nav_msgs__msg__Odometry__init(msg);
   fill_current_timestamp(msg->header.stamp);
   fill_static_string_field(msg->header.frame_id,
                            CONFIG_ROSOLINO_ODOMETRY_FRAME_ID);
@@ -178,7 +190,7 @@ void odometry_publisher_callback(rcl_timer_t *timer, int64_t last_call_time) {
 void image_publisher_callback(rcl_timer_t *timer, int64_t last_call_time) {
   (void)last_call_time;
   if (timer != NULL) {
-    publish_updated_image(&image_msg);
+    // publish_updated_image(&image_msg);
   }
 }
 
@@ -198,15 +210,61 @@ void initialize_memory_buffers() {
   memset(image_buffer, 0, IMAGE_BUFFER_SIZE);
 }
 
-void init_task(void *arg) {
+void main_task(void *arg) {
+  printf("Initializing main task\n");
+  rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();
+
+  RCCHECK(rclc_executor_init(&executor, &support.context, 4, &allocator));
+
+  unsigned int rcl_wait_timeout = 5000; // in ms
+  RCCHECK(rclc_executor_set_timeout(&executor, RCL_MS_TO_NS(rcl_wait_timeout)));
+
+  RCCHECK(rclc_executor_add_subscription(&executor, &cmd_vel_subscriber,
+                                         &cmd_vel_msg, &cmd_vel_callback,
+                                         ON_NEW_DATA));
+
+  RCCHECK(rclc_executor_add_timer(&executor, &odometry_timer));
+  RCCHECK(rclc_executor_add_timer(&executor, &image_timer));
+
+  while (1) {
+    rclc_executor_spin_some(&executor, RCL_MS_TO_NS(1));
+  }
+}
+
+// void camera_task(void *arg) {
+//   printf("Initializing camera task\n");
+
+//   rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();
+//   RCCHECK(rclc_executor_init(&executor, &support.context, 4, &allocator));
+//   unsigned int rcl_wait_timeout = 5000; // in ms
+//   RCCHECK(rclc_executor_set_timeout(&executor,
+//   RCL_MS_TO_NS(rcl_wait_timeout)));
+
+//   RCCHECK(rclc_executor_add_timer(&executor, &image_timer));
+
+//   const unsigned int spin_period =
+//       RCL_MS_TO_NS(CONFIG_ROSOLINO_SPIN_INTERVAL_MS);
+//   rclc_executor_spin_period(&executor, spin_period);
+
+//   while (1) {
+//     UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+//     printf("Camera_task stack high watermark: %d\n", uxHighWaterMark / 1024);
+//     usleep(1000000);
+//   }
+// }
+
+void app_main(void) {
+#if defined(CONFIG_MICRO_ROS_ESP_NETIF_WLAN) ||                                \
+    defined(CONFIG_MICRO_ROS_ESP_NETIF_ENET)
+  ESP_ERROR_CHECK(uros_network_interface_initialize());
+#endif
   initialize_memory_buffers();
   initialize_camera();
 
-  rcl_allocator_t allocator = rcl_get_default_allocator();
-  rclc_support_t support;
+  allocator = rcl_get_default_allocator();
 
   // Create init_options.
-  rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+  init_options = rcl_get_zero_initialized_init_options();
   RCCHECK(rcl_init_options_init(&init_options, allocator));
 
 #ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
@@ -233,12 +291,12 @@ void init_task(void *arg) {
   printf("ROS 2 domain id: %d\n", CONFIG_ROSOLINO_DOMAIN_ID);
 
   // Create node.
-  rcl_node_t node = rcl_get_zero_initialized_node();
+  node = rcl_get_zero_initialized_node();
   RCCHECK(rclc_node_init_default(&node, CONFIG_ROSOLINO_NODE_NAME,
                                  CONFIG_ROSOLINO_NODE_NAMESPACE, &support));
 
   // Create odometry publisher.
-  RCCHECK(rclc_publisher_init_default(
+  RCCHECK(rclc_publisher_init_best_effort(
       &odometry_publisher, &node,
       ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry),
       CONFIG_ROSOLINO_ODOMETRY_TOPIC_NAME));
@@ -256,8 +314,8 @@ void init_task(void *arg) {
       CONFIG_ROSOLINO_CMD_VEL_TOPIC_NAME));
 
   // Create timers
-  rcl_timer_t odometry_timer = rcl_get_zero_initialized_timer();
-  rcl_timer_t image_timer = rcl_get_zero_initialized_timer();
+  odometry_timer = rcl_get_zero_initialized_timer();
+  image_timer = rcl_get_zero_initialized_timer();
   {
     const unsigned int timer_timeout = CONFIG_ROSOLINO_ODOMETRY_INTERVAL_MS;
     RCCHECK(rclc_timer_init_default(&odometry_timer, &support,
@@ -271,32 +329,12 @@ void init_task(void *arg) {
                                     image_publisher_callback));
   }
 
-  // Create executor.
-  rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();
-  RCCHECK(rclc_executor_init(&executor, &support.context, 4, &allocator));
-  unsigned int rcl_wait_timeout = 5000; // in ms
-  RCCHECK(rclc_executor_set_timeout(&executor, RCL_MS_TO_NS(rcl_wait_timeout)));
-
-  // Add timers and subscriber to executor.
-  RCCHECK(rclc_executor_add_subscription(&executor, &cmd_vel_subscriber,
-                                         &cmd_vel_msg, &cmd_vel_callback,
-                                         ON_NEW_DATA));
-
-  RCCHECK(rclc_executor_add_timer(&executor, &odometry_timer));
-  RCCHECK(rclc_executor_add_timer(&executor, &image_timer));
-
-  rclc_executor_spin(&executor);
-}
-
-void app_main(void) {
-#if defined(CONFIG_MICRO_ROS_ESP_NETIF_WLAN) ||                                \
-    defined(CONFIG_MICRO_ROS_ESP_NETIF_ENET)
-  ESP_ERROR_CHECK(uros_network_interface_initialize());
-#endif
-
-  // pin micro-ros task in APP_CPU to make PRO_CPU to deal with wifi:
-  xTaskCreate(init_task, "uros_task", CONFIG_ROSOLINO_TASK_STACK, NULL,
+  xTaskCreate(main_task, "main_task", CONFIG_ROSOLINO_TASK_STACK, NULL,
               CONFIG_ROSOLINO_TASK_PRIORITY, NULL);
+
+  // enabling this goes beyond the resources on the board
+  // xTaskCreate(camera_task, "camera_task", CONFIG_ROSOLINO_TASK_STACK, NULL,
+  //             CONFIG_ROSOLINO_TASK_PRIORITY, NULL);
 
   while (1) {
     usleep(1000000);
